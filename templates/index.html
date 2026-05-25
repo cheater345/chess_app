@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>chessxi — Play Chess Online</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style id="board-theme-style"></style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-inner">
+            <div class="nav-left">
+                <a href="/" class="logo">
+                    <span class="logo-icon">♚</span>
+                    <span class="logo-text">chessxi</span>
+                </a>
+                <div class="nav-links" id="navLinks">
+                    <a href="#" class="nav-link active" data-view="lobby">Play</a>
+                    <a href="#" class="nav-link" data-view="puzzles">Puzzles</a>
+                    <a href="#" class="nav-link" data-view="learn">Learn</a>
+                    <a href="#" class="nav-link" data-view="leaderboard">Leaderboard</a>
+                </div>
+            </div>
+            <div class="nav-right">
+                <button class="btn btn-sm btn-secondary settings-btn" onclick="showSettings()" title="Settings" style="margin-right:10px;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                </button>
+                <div class="user-menu" id="userMenu" onclick="toggleUserDropdown()">
+                    <div class="user-avatar" id="navbarAvatar">G</div>
+                    <div class="user-menu-info">
+                        <span class="user-menu-name" id="usernameDisplay">Guest</span>
+                        <span class="user-menu-rating" id="navbarRating">1200</span>
+                    </div>
+                </div>
+                <div id="userDropdown" class="dropdown hidden">
+                    <a href="#" onclick="showProfile()">Profile</a>
+                    <a href="#" onclick="showSettings()">Settings</a>
+                    <a href="#" id="loginDropdownBtn" onclick="showAuthModal()">Log In</a>
+                    <a href="#" id="logoutBtn" class="hidden" onclick="logout()">Log Out</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="app-content">
+        <!-- LOBBY VIEW -->
+        <div id="lobbyView" class="view active">
+            <div class="lobby-grid">
+                <div class="lobby-main">
+                    <div class="hero-section">
+                        <h1 class="hero-title">Play Chess</h1>
+                        <p class="hero-sub">Challenge opponents or play against our AI</p>
+                    </div>
+
+                    <div class="tc-section">
+                        <h3 class="section-title">Time Control</h3>
+                        <div class="tc-group">
+                            <button class="tc-btn" data-tc="60" onclick="selectTimeControl(60)">1 min</button>
+                            <button class="tc-btn" data-tc="180" onclick="selectTimeControl(180)">3 min</button>
+                            <button class="tc-btn tc-active" data-tc="300" onclick="selectTimeControl(300)">5 min</button>
+                            <button class="tc-btn" data-tc="600" onclick="selectTimeControl(600)">10 min</button>
+                            <button class="tc-btn" data-tc="900" onclick="selectTimeControl(900)">15 min</button>
+                            <button class="tc-btn" data-tc="1800" onclick="selectTimeControl(1800)">30 min</button>
+                        </div>
+                    </div>
+
+                    <div class="play-ai-section">
+                        <h3 class="section-title">Play Computer</h3>
+                        <div class="elo-grid" id="aiEloGrid">
+                            <div class="elo-card" data-elo="beginner" onclick="selectAiDifficulty('beginner')">
+                                <div class="elo-stripe beginner-stripe"></div>
+                                <div class="elo-content">
+                                    <div class="elo-icon">🌱</div>
+                                    <div class="elo-name">Beginner</div>
+                                    <div class="elo-range">Easy</div>
+                                </div>
+                            </div>
+                            <div class="elo-card selected" data-elo="intermediate" onclick="selectAiDifficulty('intermediate')">
+                                <div class="elo-stripe intermediate-stripe"></div>
+                                <div class="elo-content">
+                                    <div class="elo-icon">📈</div>
+                                    <div class="elo-name">Intermediate</div>
+                                    <div class="elo-range">Medium</div>
+                                </div>
+                            </div>
+                            <div class="elo-card" data-elo="advanced" onclick="selectAiDifficulty('advanced')">
+                                <div class="elo-stripe advanced-stripe"></div>
+                                <div class="elo-content">
+                                    <div class="elo-icon">⚔️</div>
+                                    <div class="elo-name">Advanced</div>
+                                    <div class="elo-range">Hard</div>
+                                </div>
+                            </div>
+                            <div class="elo-card" data-elo="master" onclick="selectAiDifficulty('master')">
+                                <div class="elo-stripe master-stripe"></div>
+                                <div class="elo-content">
+                                    <div class="elo-icon">👑</div>
+                                    <div class="elo-name">Master</div>
+                                    <div class="elo-range">Expert</div>
+                                </div>
+                            </div>
+                            <div class="elo-card" data-elo="grandmaster" onclick="selectAiDifficulty('grandmaster')">
+                                <div class="elo-stripe grandmaster-stripe"></div>
+                                <div class="elo-content">
+                                    <div class="elo-icon">🏆</div>
+                                    <div class="elo-name">Grandmaster</div>
+                                    <div class="elo-range">Legendary</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-play btn-lg" onclick="playComputer()">
+                            <svg class="btn-svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                            Play Computer
+                        </button>
+                    </div>
+
+                    <div class="divider"><span>or</span></div>
+
+                    <div class="elo-section">
+                        <h3 class="section-title">Your Skill Level</h3>
+                        <div class="elo-grid" id="eloGrid">
+                            <div class="elo-card" data-elo="beginner" onclick="selectElo('beginner')">
+                                <div class="elo-stripe beginner-stripe"></div>
+                                <div class="elo-content">
+                                    <div class="elo-icon">🌱</div>
+                                    <div class="elo-name">Beginner</div>
+                                    <div class="elo-range">400–800</div>
+                                </div>
+                            </div>
+                            <div class="elo-card selected" data-elo="intermediate" onclick="selectElo('intermediate')">
+                                <div class="elo-stripe intermediate-stripe"></div>
+                                <div class="elo-content">
+                                    <div class="elo-icon">📈</div>
+                                    <div class="elo-name">Intermediate</div>
+                                    <div class="elo-range">800–1400</div>
+                                </div>
+                            </div>
+                            <div class="elo-card" data-elo="advanced" onclick="selectElo('advanced')">
+                                <div class="elo-stripe advanced-stripe"></div>
+                                <div class="elo-content">
+                                    <div class="elo-icon">⚔️</div>
+                                    <div class="elo-name">Advanced</div>
+                                    <div class="elo-range">1400–2000</div>
+                                </div>
+                            </div>
+                            <div class="elo-card" data-elo="master" onclick="selectElo('master')">
+                                <div class="elo-stripe master-stripe"></div>
+                                <div class="elo-content">
+                                    <div class="elo-icon">👑</div>
+                                    <div class="elo-name">Master</div>
+                                    <div class="elo-range">2000–2400</div>
+                                </div>
+                            </div>
+                            <div class="elo-card" data-elo="grandmaster" onclick="selectElo('grandmaster')">
+                                <div class="elo-stripe grandmaster-stripe"></div>
+                                <div class="elo-content">
+                                    <div class="elo-icon">🏆</div>
+                                    <div class="elo-name">Grandmaster</div>
+                                    <div class="elo-range">2400+</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="play-buttons">
+                        <button class="btn btn-play btn-lg" onclick="findMatch()">
+                            <svg class="btn-svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                            Find Match
+                        </button>
+                        <button class="btn btn-secondary btn-lg" onclick="createGame()">
+                            <svg class="btn-svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Create Game
+                        </button>
+                    </div>
+
+                    <div class="join-section">
+                        <h3 class="section-title">Join a Game</h3>
+                        <div class="join-row">
+                            <input type="text" id="gameCodeInput" placeholder="Enter game code" class="input" maxlength="6">
+                            <button class="btn btn-primary" onclick="joinGame()">Join</button>
+                        </div>
+                    </div>
+
+                    <div id="searchStatus" class="search-status hidden">
+                        <div class="spinner"></div>
+                        <span>Searching for opponent...</span>
+                        <button class="btn btn-sm btn-danger" onclick="cancelSearch()">Cancel</button>
+                    </div>
+                </div>
+
+                <div class="lobby-sidebar">
+                    <div class="sb-card">
+                        <h3 class="sb-title">Your Stats</h3>
+                        <div class="sb-stats">
+                            <div class="sb-stat"><span class="sb-stat-label">Rating</span><span class="sb-stat-value" id="lobbyRating">1200</span></div>
+                            <div class="sb-stat"><span class="sb-stat-label">Wins</span><span class="sb-stat-value" id="lobbyWins">0</span></div>
+                            <div class="sb-stat"><span class="sb-stat-label">Losses</span><span class="sb-stat-value" id="lobbyLosses">0</span></div>
+                            <div class="sb-stat"><span class="sb-stat-label">Draws</span><span class="sb-stat-value" id="lobbyDraws">0</span></div>
+                            <div class="sb-stat"><span class="sb-stat-label">Streak</span><span class="sb-stat-value" id="lobbyStreak">—</span></div>
+                            <div class="sb-stat"><span class="sb-stat-label">Puzzle Rating</span><span class="sb-stat-value" id="lobbyPuzzleRating">1200</span></div>
+                        </div>
+                    </div>
+                    <div class="sb-card" id="friendsCard">
+                        <h3 class="sb-title">Friends <span class="sb-title-action" onclick="showFriendSearch()">+ Add</span></h3>
+                        <div id="friendsList" class="games-list">
+                            <div class="games-empty">No friends yet</div>
+                        </div>
+                    </div>
+                    <div class="sb-card">
+                        <h3 class="sb-title">Open Games</h3>
+                        <div id="gamesList" class="games-list">
+                            <div class="games-empty">No open games right now</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PUZZLES VIEW -->
+        <div id="puzzlesView" class="view">
+            <div class="puzzles-header">
+                <h1>Puzzles</h1>
+                <p>Improve your tactics with daily puzzles</p>
+            </div>
+            <div class="puzzles-layout">
+                <div class="puzzle-board-section">
+                    <div class="puzzle-info-bar">
+                        <span id="puzzleRating">Rating: 1200</span>
+                        <span id="puzzleThemes">Themes: —</span>
+                        <span id="puzzleStats">Solved: 0/0</span>
+                    </div>
+                    <div class="board-area">
+                        <div class="board-wrap" style="max-width:480px;">
+                            <div id="puzzleBoard"></div>
+                        </div>
+                    </div>
+                    <div class="puzzle-controls">
+                        <button class="btn btn-play" onclick="getNewPuzzle()">New Puzzle</button>
+                        <button class="btn btn-secondary" onclick="puzzleShowHint()">Hint</button>
+                        <button class="btn btn-secondary" onclick="puzzleShowSolution()">Show Solution</button>
+                    </div>
+                    <div class="puzzle-feedback" id="puzzleFeedback"></div>
+                </div>
+                <div class="puzzle-sidebar">
+                    <div class="sb-card">
+                        <h3 class="sb-title">Puzzle Statistics</h3>
+                        <div class="sb-stats">
+                            <div class="sb-stat"><span class="sb-stat-label">Rating</span><span class="sb-stat-value" id="puzzleRatingDisplay">1200</span></div>
+                            <div class="sb-stat"><span class="sb-stat-label">Solved</span><span class="sb-stat-value" id="puzzlesSolvedDisplay">0</span></div>
+                            <div class="sb-stat"><span class="sb-stat-label">Streak</span><span class="sb-stat-value" id="puzzleStreakDisplay">0</span></div>
+                        </div>
+                    </div>
+                    <div class="sb-card">
+                        <h3 class="sb-title">Filter by Theme</h3>
+                        <div class="theme-filters">
+                            <button class="btn btn-sm btn-secondary theme-filter active" data-theme="">All</button>
+                            <button class="btn btn-sm btn-secondary theme-filter" data-theme="mate">Mate</button>
+                            <button class="btn btn-sm btn-secondary theme-filter" data-theme="fork">Fork</button>
+                            <button class="btn btn-sm btn-secondary theme-filter" data-theme="sacrifice">Sacrifice</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LEARN VIEW -->
+        <div id="learnView" class="view">
+            <div class="puzzles-header">
+                <h1>Learn Chess</h1>
+                <p>Study openings, endgames, and more</p>
+            </div>
+            <div class="learn-grid">
+                <div class="learn-card" onclick="showNotification('Opening explorer coming soon!', 'info')">
+                    <div class="learn-icon">📖</div>
+                    <h3>Opening Explorer</h3>
+                    <p>Study the most popular openings and responses</p>
+                </div>
+                <div class="learn-card" onclick="showNotification('Endgame trainer coming soon!', 'info')">
+                    <div class="learn-icon">🏁</div>
+                    <h3>Endgame Trainer</h3>
+                    <p>Master essential endgame techniques</p>
+                </div>
+                <div class="learn-card" onclick="showNotification('Video lessons coming soon!', 'info')">
+                    <div class="learn-icon">🎥</div>
+                    <h3>Video Lessons</h3>
+                    <p>Watch instructional videos from masters</p>
+                </div>
+                <div class="learn-card" onclick="showGameArchive()">
+                    <div class="learn-icon">📋</div>
+                    <h3>Game Archive</h3>
+                    <p>Review your past games with analysis</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- LEADERBOARD VIEW -->
+        <div id="leaderboardView" class="view">
+            <div class="puzzles-header">
+                <h1>Leaderboard</h1>
+                <p>Top players by rating</p>
+            </div>
+            <div class="leaderboard-table-wrap">
+                <table class="leaderboard-table" id="leaderboardTable">
+                    <thead>
+                        <tr><th>#</th><th>Player</th><th>Rating</th><th>W</th><th>L</th><th>D</th><th>Win %</th></tr>
+                    </thead>
+                    <tbody id="leaderboardBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- GAME VIEW -->
+        <div id="gameView" class="view">
+            <div class="game-grid" id="gameGrid">
+                <div class="game-col-main">
+                    <div class="opponent-section">
+                        <div class="player-bar" id="opponentBar">
+                            <div class="pb-left">
+                                <div class="pb-avatar">♟</div>
+                                <div class="pb-info">
+                                    <span class="pb-name" id="opponentName">Opponent</span>
+                                    <span class="pb-rating" id="opponentRating">1200</span>
+                                </div>
+                            </div>
+                            <div class="pb-right">
+                                <div class="pb-captured" id="opponentCaptured"></div>
+                                <div class="pb-timer" id="opponentTimer">10:00</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="board-area" id="gameBoardArea">
+                        <div class="board-wrap" id="boardWrap">
+                            <div id="chessBoard"></div>
+                        </div>
+                    </div>
+
+                    <div class="player-section">
+                        <div class="player-bar" id="myBar">
+                            <div class="pb-left">
+                                <div class="pb-avatar">♚</div>
+                                <div class="pb-info">
+                                    <span class="pb-name" id="myName">You</span>
+                                    <span class="pb-rating" id="myRating">1200</span>
+                                </div>
+                            </div>
+                            <div class="pb-right">
+                                <div class="pb-captured" id="myCaptured"></div>
+                                <div class="pb-timer" id="myTimer">10:00</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="game-footer">
+                        <div class="gf-status" id="gameStatus">White's turn</div>
+                        <div class="gf-buttons">
+                            <button class="btn btn-sm btn-outline-danger" onclick="resignGame()" title="Resign">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+                                Resign
+                            </button>
+                            <button class="btn btn-sm btn-outline" onclick="offerDraw()" title="Offer Draw" id="drawBtn">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2z"/></svg>
+                                Draw
+                            </button>
+                            <button class="btn btn-sm btn-play hidden" onclick="requestRematch()" id="rematchBtn">Rematch</button>
+                            <button class="btn btn-sm btn-secondary hidden" onclick="leaveGame()" id="leaveBtn">New Game</button>
+                            <button class="btn btn-sm btn-secondary zen-btn" onclick="toggleZenMode()" title="Zen Mode">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="chat-section" id="chatSection">
+                        <div class="chat-header" onclick="toggleChat()">
+                            <span>💬 Chat</span>
+                            <span class="chat-toggle">▼</span>
+                        </div>
+                        <div class="chat-body" id="chatBody">
+                            <div id="chatMessages" class="chat-messages"></div>
+                            <div class="chat-input-row">
+                                <input type="text" id="chatInput" placeholder="Type a message..." class="input" maxlength="200">
+                                <button class="btn btn-sm btn-primary" onclick="sendChat()">Send</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="game-col-side">
+                    <div class="move-panel">
+                        <div class="mp-header">
+                            <h3>Move List</h3>
+                            <span class="mp-result" id="moveResult"></span>
+                        </div>
+                        <div class="mp-body" id="moveHistory"></div>
+                        <div class="mp-footer">
+                            <button class="btn btn-sm btn-secondary" onclick="downloadPGN()" title="Download PGN">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                PGN
+                            </button>
+                            <button class="btn btn-sm btn-secondary" onclick="showAnalysis()" title="Analyze Game" id="analyzeBtn">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                                Analyze
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ANALYSIS VIEW -->
+        <div id="analysisView" class="view">
+            <div class="game-grid">
+                <div class="game-col-main">
+                    <div class="analysis-toolbar">
+                        <button class="btn btn-sm btn-secondary" onclick="closeAnalysis()">← Back to Game</button>
+                        <span class="analysis-title">Game Analysis</span>
+                        <div class="analysis-eval" id="analysisEval">0.0</div>
+                    </div>
+                    <div class="board-area">
+                        <div class="board-wrap" style="max-width:480px;">
+                            <div id="analysisBoard"></div>
+                        </div>
+                    </div>
+                    <div class="analysis-controls">
+                        <button class="btn btn-sm btn-secondary" onclick="analysisGoToStart()">⏮</button>
+                        <button class="btn btn-sm btn-secondary" onclick="analysisGoBack()">◀</button>
+                        <button class="btn btn-sm btn-secondary" onclick="analysisGoForward()">▶</button>
+                        <button class="btn btn-sm btn-secondary" onclick="analysisGoToEnd()">⏭</button>
+                        <span class="analysis-move-num" id="analysisMoveNum">Move 0 / 0</span>
+                    </div>
+                    <div class="analysis-moves" id="analysisMoveList"></div>
+                </div>
+                <div class="game-col-side">
+                    <div class="move-panel">
+                        <div class="mp-header"><h3>Analysis</h3></div>
+                        <div class="mp-body" id="analysisInfo">
+                            <p style="color:var(--text3);padding:16px;text-align:center;">Use the controls above to review your game with engine evaluation.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PROFILE VIEW -->
+        <div id="profileView" class="view">
+            <div class="profile-header">
+                <div class="profile-avatar-large" id="profileAvatarLarge">G</div>
+                <div class="profile-info">
+                    <h1 id="profileUsername">Username</h1>
+                    <div class="profile-rating" id="profileRating">Rating: 1200</div>
+                </div>
+            </div>
+            <div class="profile-stats-grid">
+                <div class="sb-card"><h3 class="sb-title">Games</h3><div class="profile-stat-value" id="profileGames">0</div></div>
+                <div class="sb-card"><h3 class="sb-title">Wins</h3><div class="profile-stat-value green" id="profileWins">0</div></div>
+                <div class="sb-card"><h3 class="sb-title">Losses</h3><div class="profile-stat-value red" id="profileLosses">0</div></div>
+                <div class="sb-card"><h3 class="sb-title">Draws</h3><div class="profile-stat-value" id="profileDraws">0</div></div>
+                <div class="sb-card"><h3 class="sb-title">Win Rate</h3><div class="profile-stat-value" id="profileWinRate">0%</div></div>
+                <div class="sb-card"><h3 class="sb-title">Best Streak</h3><div class="profile-stat-value" id="profileStreak">0</div></div>
+                <div class="sb-card"><h3 class="sb-title">Puzzle Rating</h3><div class="profile-stat-value" id="profilePuzzleRating">1200</div></div>
+                <div class="sb-card"><h3 class="sb-title">Puzzles Solved</h3><div class="profile-stat-value" id="profilePuzzlesSolved">0</div></div>
+            </div>
+            <h3 class="section-title" style="margin-top:24px;">Recent Games</h3>
+            <div class="recent-games" id="recentGames">
+                <div class="games-empty">No games played yet</div>
+            </div>
+        </div>
+
+        <!-- GAME ARCHIVE VIEW -->
+        <div id="archiveView" class="view">
+            <div class="profile-header">
+                <h1>Game Archive</h1>
+                <button class="btn btn-sm btn-secondary" onclick="switchToView('profile')">← Back</button>
+            </div>
+            <div class="archive-list" id="archiveList">
+                <div class="games-empty">No games found</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GAME OVER MODAL -->
+    <div id="gameOverModal" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-dialog">
+            <div class="modal-icon" id="modalIcon">🎉</div>
+            <h2 id="modalTitle">Game Over</h2>
+            <p id="modalDetail">The game has ended</p>
+            <div class="modal-buttons">
+                <button class="btn btn-play" onclick="requestRematch()">Rematch</button>
+                <button class="btn btn-secondary" onclick="showAnalysis()">Analyze</button>
+                <button class="btn btn-secondary" onclick="leaveGame()">New Game</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUTH MODAL -->
+    <div id="authModal" class="modal hidden">
+        <div class="modal-backdrop" onclick="closeAuthModal()"></div>
+        <div class="modal-dialog" style="max-width:380px;">
+            <h2 id="authModalTitle">Log In</h2>
+            <div class="auth-form">
+                <div id="authTabs" class="auth-tabs">
+                    <button class="auth-tab active" data-tab="login" onclick="switchAuthTab('login')">Log In</button>
+                    <button class="auth-tab" data-tab="register" onclick="switchAuthTab('register')">Register</button>
+                </div>
+                <div class="auth-fields">
+                    <input type="text" id="authUsername" placeholder="Username" class="input" autocomplete="username">
+                    <input type="email" id="authEmail" placeholder="Email (for registration)" class="input hidden" autocomplete="email">
+                    <input type="password" id="authPassword" placeholder="Password" class="input" autocomplete="current-password">
+                </div>
+                <div class="auth-error" id="authError"></div>
+                <button class="btn btn-play btn-lg" style="width:100%;justify-content:center;" onclick="submitAuth()">Log In</button>
+                <button class="btn btn-secondary btn-lg" style="width:100%;justify-content:center;margin-top:8px;" onclick="continueAsGuest()">Continue as Guest</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETTINGS MODAL -->
+    <div id="settingsModal" class="modal hidden">
+        <div class="modal-backdrop" onclick="closeSettings()"></div>
+        <div class="modal-dialog" style="max-width:420px;">
+            <h2>Settings</h2>
+            <div class="settings-content">
+                <div class="setting-group">
+                    <h4>Board Theme</h4>
+                    <div class="theme-options" id="boardThemeOptions">
+                        <div class="theme-option active" data-theme="classic" onclick="selectBoardTheme('classic')">
+                            <div class="theme-preview classic-theme"></div>
+                            <span>Classic</span>
+                        </div>
+                        <div class="theme-option" data-theme="green" onclick="selectBoardTheme('green')">
+                            <div class="theme-preview green-theme"></div>
+                            <span>Green</span>
+                        </div>
+                        <div class="theme-option" data-theme="blue" onclick="selectBoardTheme('blue')">
+                            <div class="theme-preview blue-theme"></div>
+                            <span>Blue</span>
+                        </div>
+                        <div class="theme-option" data-theme="ice" onclick="selectBoardTheme('ice')">
+                            <div class="theme-preview ice-theme"></div>
+                            <span>Ice</span>
+                        </div>
+                        <div class="theme-option" data-theme="dark" onclick="selectBoardTheme('dark')">
+                            <div class="theme-preview dark-theme"></div>
+                            <span>Dark</span>
+                        </div>
+                        <div class="theme-option" data-theme="wood" onclick="selectBoardTheme('wood')">
+                            <div class="theme-preview wood-theme"></div>
+                            <span>Wood</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="setting-group">
+                    <h4>Piece Set</h4>
+                    <div class="theme-options" id="pieceSetOptions">
+                        <div class="theme-option active" data-set="wikipedia" onclick="selectPieceSet('wikipedia')">
+                            <span>Wikipedia</span>
+                        </div>
+                        <div class="theme-option" data-set="alpha" onclick="selectPieceSet('alpha')">
+                            <span>Alpha</span>
+                        </div>
+                        <div class="theme-option" data-set="uscf" onclick="selectPieceSet('uscf')">
+                            <span>USCF</span>
+                        </div>
+                        <div class="theme-option" data-set="maya" onclick="selectPieceSet('maya')">
+                            <span>Maya</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="setting-group">
+                    <label class="setting-toggle">
+                        <span>Sound Effects</span>
+                        <input type="checkbox" id="soundToggle" checked onchange="toggleSound()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="closeSettings()" style="margin-top:16px;">Done</button>
+        </div>
+    </div>
+
+    <!-- FRIEND SEARCH MODAL -->
+    <div id="friendSearchModal" class="modal hidden">
+        <div class="modal-backdrop" onclick="closeFriendSearch()"></div>
+        <div class="modal-dialog" style="max-width:360px;">
+            <h2>Add Friend</h2>
+            <div class="auth-fields">
+                <input type="text" id="friendSearchInput" placeholder="Search by username..." class="input" oninput="searchFriends()">
+            </div>
+            <div id="friendSearchResults" class="friend-results">
+                <div class="games-empty">Type to search...</div>
+            </div>
+            <button class="btn btn-secondary" onclick="closeFriendSearch()" style="margin-top:12px;">Close</button>
+        </div>
+    </div>
+
+    <!-- GAME ARCHIVE REPLAY MODAL -->
+    <div id="replayModal" class="modal hidden">
+        <div class="modal-backdrop" onclick="closeReplayModal()"></div>
+        <div class="modal-dialog" style="max-width:480px;">
+            <h2 id="replayTitle">Game Replay</h2>
+            <div class="replay-board-wrap">
+                <div id="replayBoard"></div>
+            </div>
+            <div class="analysis-controls" style="margin:12px 0;">
+                <button class="btn btn-sm btn-secondary" onclick="replayGoToStart()">⏮</button>
+                <button class="btn btn-sm btn-secondary" onclick="replayGoBack()">◀</button>
+                <span id="replayMoveNum">0 / 0</span>
+                <button class="btn btn-sm btn-secondary" onclick="replayGoForward()">▶</button>
+                <button class="btn btn-sm btn-secondary" onclick="replayGoToEnd()">⏭</button>
+            </div>
+            <div id="replayMoves" class="analysis-moves" style="max-height:200px;overflow-y:auto;"></div>
+            <div id="replayResult" style="margin-top:8px;font-weight:600;color:var(--gold);"></div>
+            <button class="btn btn-secondary" onclick="closeReplayModal()" style="margin-top:12px;">Close</button>
+        </div>
+    </div>
+
+    <!-- Notification container -->
+    <div id="notificationContainer" class="notif-container"></div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.13.4/chess.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
